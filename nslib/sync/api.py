@@ -73,7 +73,7 @@ class SyncAPI:
         self.ratelimit_remaining = 0
         self.ratelimit_reset = 0
         self.last_request_time = 0
-        self.maximum_requests = 50
+        self.maximum_requests = 45  # Undershoot the API limit by 5 requests to be safe.
 
     def _limit(self) -> bool:
         """
@@ -98,6 +98,8 @@ class SyncAPI:
                 self.ratelimit_remaining -= 1
                 self.last_request_time = now
                 return True
+            else:
+                return False
 
     def _request(
         self, params: dict, method: str = "GET", isprivate: bool = False
