@@ -62,7 +62,7 @@ class NSAuth(AuthBase):
 
 
 class SyncAPI:
-    def __init__(self, useragent: str, auth: Optional = None):
+    def __init__(self, useragent: str, auth: Optional[NSAuth] = None):
         self.useragent = useragent
         self.auth = auth
         self.session = requests.Session()
