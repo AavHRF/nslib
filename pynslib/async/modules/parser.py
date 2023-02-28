@@ -1,9 +1,9 @@
-# This file is part of nslib. nslib is free software: you can redistribute it and/or modify it under the terms of the
+# This file is part of pynslib. pynslib is free software: you can redistribute it and/or modify it under the terms of the
 # GNU General Public License as published by the Free Software Foundation, either version 3 of the License,
-# or (at your option) any later version. nslib is distributed in the hope that it will be useful, but WITHOUT ANY
+# or (at your option) any later version. pynslib is distributed in the hope that it will be useful, but WITHOUT ANY
 # WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 # General Public License for more details. You should have received a copy of the GNU General Public License along
-# with nslib. If not, see <https://www.gnu.org/licenses/>.
+# with pynslib. If not, see <https://www.gnu.org/licenses/>.
 
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import ParseError
@@ -34,9 +34,9 @@ class Parser:
             root = ET.fromstring(self.xml)
         except ParseError:
             return {}
-        return self._parse_element(root)
+        return await self._parse_element(root)
 
-    def _parse_element(
+    async def _parse_element(
         self, element: ET.Element
     ) -> Union[Dict[str, Any], List[Union[str, Dict[str, Any]]]]:
         """

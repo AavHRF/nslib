@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "nslib"
-version = "0.1.0"
+name = "pynslib"
+version = "0.1.1"
 description = "A synchronous/asynchronous library for the NS API"
 license = "GPL-3.0-only"
 authors = ["Aav <aav.verinhall@gmail.com>"]

@@ -1,2 +1,2 @@
 from .api import SyncAPI, RateLimitExceeded, NoAuthSet, NSAuth
-from .models import Dispatch, Nation
+from pynslib.sync.modules.models import Dispatch, Nation

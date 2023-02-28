@@ -1,9 +1,9 @@
-# This file is part of nslib. nslib is free software: you can redistribute it and/or modify it under the terms of the
+# This file is part of pynslib. pynslib is free software: you can redistribute it and/or modify it under the terms of the
 # GNU General Public License as published by the Free Software Foundation, either version 3 of the License,
-# or (at your option) any later version. nslib is distributed in the hope that it will be useful, but WITHOUT ANY
+# or (at your option) any later version. pynslib is distributed in the hope that it will be useful, but WITHOUT ANY
 # WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 # General Public License for more details. You should have received a copy of the GNU General Public License along
-# with nslib. If not, see <https://www.gnu.org/licenses/>.
+# with pynslib. If not, see <https://www.gnu.org/licenses/>.
 
 import requests
 import time
@@ -99,7 +99,13 @@ class SyncAPI:
                 self.last_request_time = now
                 return True
             else:
-                return False
+                if self.ratelimit_remaining == 0 and self.last_request_time == 0:
+                    self.ratelimit_remaining = self.maximum_requests
+                    self.ratelimit_remaining -= 1
+                    self.last_request_time = now
+                    return True
+                else:
+                    return False
 
     def _request(
         self, params: dict, method: str = "GET", isprivate: bool = False
