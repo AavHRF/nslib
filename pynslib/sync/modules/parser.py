@@ -15,6 +15,8 @@ class Parser:
     Parses XML from the NS API and returns it as a JSON object.
     """
 
+    __slots__ = ("xml",)
+
     def __init__(self, xml: str):
         """
         Parser constructor

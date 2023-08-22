@@ -10,6 +10,7 @@ import time
 from typing import Optional, List
 from requests.auth import AuthBase
 from .modules import Parser
+from .modules import Nation, Region
 
 PRIVATE_SHARDS: List[str] = [
     "dossier",
@@ -41,8 +42,10 @@ class NoAuthSet(Exception):
 
 
 class NSAuth(AuthBase):
+
+    __slots__ = ("nation", "password", "_pin")
     def __init__(self, nation: str, password: str):
-        self.nation = nation
+        self.nation = nation.lower().replace(" ", "_")
         self.password = password
         self._pin = None
 
@@ -62,18 +65,35 @@ class NSAuth(AuthBase):
 
 
 class SyncAPI:
+
+    __slots__ = (
+        "useragent",
+        "auth",
+        "session",
+        "api_url",
+        "ratelimit_remaining",
+        "requests_remaining",
+        "last_request_time",
+        "maximum_requests",
+        "next_request_time",
+        "_useragent",
+        "ratelimit",
+        "ratelimit_reset",
+        "retry_after",
+    )
     def __init__(self, useragent: str, auth: Optional[NSAuth] = None):
-        self.useragent = useragent
+        self._useragent = useragent
         self.auth = auth
         self.session = requests.Session()
-        self.session.headers.update({"User-Agent": self.useragent})
+        self.session.headers.update({"User-Agent": self._useragent})
         self.api_url = "https://www.nationstates.net/cgi-bin/api.cgi"
 
         # Ratelimit variables
+        self.ratelimit = 0
         self.ratelimit_remaining = 0
         self.ratelimit_reset = 0
         self.last_request_time = 0
-        self.maximum_requests = 45  # Undershoot the API limit by 5 requests to be safe.
+        self.retry_after = 0
 
     def _limit(self) -> bool:
         """
@@ -85,7 +105,7 @@ class SyncAPI:
         :return: A boolean value of if the request can proceed.
         """
         now = time.time()
-        if now - self.last_request_time <= 30:
+        if now <= self.requests_remaining:
             if self.ratelimit_remaining > 0:
                 self.ratelimit_remaining -= 1
                 self.last_request_time = now
@@ -151,6 +171,11 @@ class SyncAPI:
                 raise NoAuthSet
 
         response = self._request(params, isprivate=isprivate)
+        self.ratelimit_reset = int(response.headers["RateLimit-Reset"]) if "RateLimit-Reset" in response.headers else 0
+        self.ratelimit_remaining = int(response.headers["RateLimit-Remaining"]) if "RateLimit-Remaining" in response.headers else 0
+        if response.status_code == 429:
+            self.ratelimit_remaining = 0
+            raise RateLimitExceeded
         if isprivate:
             if self.auth.pin is None:
                 # If the PIN is not set, set it.
@@ -161,7 +186,7 @@ class SyncAPI:
                     self.auth.pin = response.headers["X-Pin"]
         return Parser(response.text)()
 
-    def nation(self, nation: str) -> dict:
+    def nation(self, nation: str) -> Nation:
         """
         Gets the nation data for a nation.
 
@@ -171,9 +196,9 @@ class SyncAPI:
         params = {
             "nation": nation,
         }
-        return self.make(params)
+        return Nation.from_dict(self.make(params))
 
-    def region(self, region: str) -> dict:
+    def region(self, region: str) -> Region:
         """
         Gets the region data for a region.
 
@@ -183,7 +208,7 @@ class SyncAPI:
         params = {
             "region": region,
         }
-        return self.make(params)
+        return Region.from_dict(self.make(params))
 
     @staticmethod
     def _create_auth(nation: str, password: str) -> NSAuth:
@@ -205,3 +230,13 @@ class SyncAPI:
         if not self._limit():
             raise RateLimitExceeded
         return 1
+
+    @property
+    def useragent(self) -> str:
+        return self._useragent
+
+    @useragent.setter
+    def useragent(self, useragent: str):
+        self._useragent = useragent
+        self.session.headers.update({"User-Agent": self._useragent})
+

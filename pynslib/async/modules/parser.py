@@ -5,12 +5,13 @@
 # General Public License for more details. You should have received a copy of the GNU General Public License along
 # with pynslib. If not, see <https://www.gnu.org/licenses/>.
 
+import asyncio
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import ParseError
 from typing import List, Dict, Any, Union
 
 
-class Parser:
+class AsyncParser:
     """
     Parses XML from the NS API and returns it as a JSON object.
     """
@@ -22,10 +23,10 @@ class Parser:
         """
         self.xml = xml
 
-    def __call__(self, *args, **kwargs) -> Dict[str, Any]:
-        return self.parse()
+    async def __call__(self, *args, **kwargs) -> Dict[str, Any]:
+        return await self.parse()
 
-    def parse(self) -> Dict[str, Any]:
+    async def parse(self) -> Dict[str, Any]:
         """
         Parses the XML and returns it as a JSON object.
         :return: The JSON object.
@@ -34,9 +35,9 @@ class Parser:
             root = ET.fromstring(self.xml)
         except ParseError:
             return {}
-        return await self._parse_element(root)
+        return await asyncio.to_thread(self._parse_element, root)
 
-    async def _parse_element(
+    def _parse_element(
         self, element: ET.Element
     ) -> Union[Dict[str, Any], List[Union[str, Dict[str, Any]]]]:
         """

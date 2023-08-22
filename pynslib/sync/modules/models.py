@@ -5,9 +5,9 @@
 # General Public License for more details. You should have received a copy of the GNU General Public License along
 # with pynslib. If not, see <https://www.gnu.org/licenses/>.
 
-from pynslib.sync.api import SyncAPI
+from pynslib.sync.api import SyncAPI, NSAuth
 from dataclasses import dataclass
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 
 cat_ids: dict = {
     "factbook": 1,
@@ -17,32 +17,32 @@ cat_ids: dict = {
 }
 
 subcat_ids: dict = {
-    "Overview": 100,
-    "History": 101,
-    "Geography": 102,
-    "Factbook_Culture": 103,
-    "Politics": 104,
-    "Legislation": 105,
-    "Religion": 106,
-    "Factbook_Military": 107,
-    "Economy": 108,
-    "International": 109,
-    "Trivia": 110,
-    "Miscellaneous": 111,
-    "Policy": 305,
-    "News": 315,
-    "Opinion": 325,
-    "Campaign": 385,
-    "Account_Military": 505,
-    "Trade": 515,
-    "Sport": 525,
-    "Drama": 535,
-    "Diplomacy": 545,
-    "Science": 555,
-    "Account_Culture": 565,
-    "Other": 595,
-    "Gameplay": 835,
-    "Reference": 845,
+    "overview": 100,
+    "history": 101,
+    "geography": 102,
+    "factbook_culture": 103,
+    "politics": 104,
+    "legislation": 105,
+    "religion": 106,
+    "factbook_military": 107,
+    "economy": 108,
+    "international": 109,
+    "trivia": 110,
+    "miscellaneous": 111,
+    "policy": 305,
+    "news": 315,
+    "opinion": 325,
+    "campaign": 385,
+    "account_military": 505,
+    "trade": 515,
+    "sport": 525,
+    "drama": 535,
+    "diplomacy": 545,
+    "science": 555,
+    "account_culture": 565,
+    "other": 595,
+    "gameplay": 835,
+    "reference": 845,
 }
 
 
@@ -84,11 +84,54 @@ class Dispatch:
 
 
 class NationAPI:
-    def __init__(self, api: SyncAPI, nation: str):
+    """
+    The NationAPI object allows for private command manipulation of a nation
+    through the NationStates API. You can create multiple instances of this
+    object to manipulate multiple nations from the same program, and the library
+    will maintain state appropriately for you.
+    """
+    __slots__ = (
+        "api",
+        "auth",
+    )
+    def __init__(self, api: SyncAPI, auth: NSAuth):
         self.api = api
-        self.nation = nation
+        self.auth = auth
+
+    def switch_context(self, *args, **kwargs):
+        """
+        Switches the context of the API to the nation represented by this object.
+        This enables the use of private commands, such as dispatch, without
+        destroying state you may be relying on elsewhere in your program.
+        By default, this method is called automatically when you use a private
+        command, but you can call it manually if you need to.
+
+        :param args:
+        :param kwargs:
+        :return:
+        """
+
+        if self.api.auth:
+            old_auth = self.api.auth
+            self.api.auth = self.auth
+            result = self.api.make(*args, **kwargs)
+            self.api.auth = old_auth
+            return result
+        else:
+            self.api.auth = self.auth
+            return self.api.make(*args, **kwargs)
+
 
     def dispatch(self, dispatch: Dispatch):
+        """
+        Accepts a Dispatch object and dispatches it to the nation represented by
+        this object. The Dispatch object can be created manually, or you can use
+        the DispatchBuilder class to create one for you.
+
+        :param dispatch:
+        :return:
+        """
+
         if dispatch.mode == "add":
             pass
         elif dispatch.mode == "edit":
